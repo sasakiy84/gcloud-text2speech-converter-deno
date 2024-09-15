@@ -14,6 +14,8 @@ Options:
   --outputDir    Path to the output directory. Default: output
   --languageCode    Language code. Default: en-GB
   --voiceName    Voice name. Default: en-GB-Standard-C
+  --sentenceDelimiter    Sentence delimiter. Default: (?<=[.!?])\s+
+  --endOfSentenceSymbol    End of sentence symbols. Default: .
 
 More info:
   For language codes and voice names see https://cloud.google.com/text-to-speech/docs/voices
@@ -31,6 +33,9 @@ const outputDir = args.outputDir || "output";
 
 const languageCode = args.languageCode || "en-GB";
 const voiceName = args.voiceName || "en-GB-Standard-C";
+const sentenceDelimiter = args.sentenceDelimiter || "(?<=[.!?])\s+";
+const sentenceDelimiterRegex = new RegExp(sentenceDelimiter);
+const endOfSentenceSymbol = args.endOfSentenceSymbol || ".";
 
 await Deno.writeTextFile(fileListPath, "");
 
@@ -56,6 +61,7 @@ const convertTextToSpeechAndSave = async (text: string, fileName: string) => {
 			: response.audioContent;
 
 	await Deno.writeFile(join(outputDir, fileName), binaryData);
+	await Deno.writeTextFile(join(outputDir, fileName.replace(".mp3", ".txt")), text);
 	console.log(`Audio content written to file: ${fileName}`);
 	await Deno.writeTextFile(
 		fileListPath,
@@ -68,18 +74,17 @@ const convertTextToSpeechAndSave = async (text: string, fileName: string) => {
 
 async function main() {
 	const text = await Deno.readTextFile(textFilePath);
-	const endOfSentenceRegex = /(?<=[.!?])\s+/;
-	const sentences = text.split(endOfSentenceRegex);
+	const sentences = text.split(sentenceDelimiterRegex);
 	const textCunks = sentences.reduce<string[]>((acc, sentence) => {
 		if (acc.length === 0) {
-			return [`${sentence}.`];
+			return [`${sentence}${endOfSentenceSymbol}`];
 		}
 		const lastChunk = acc[acc.length - 1];
 		if (lastChunk.length + sentence.length > 4000) {
-			acc.push(`${sentence}.`);
+			acc.push(`${sentence}${endOfSentenceSymbol}`);
 			return acc;
 		}
-		acc[acc.length - 1] = `${lastChunk} ${sentence}.`;
+		acc[acc.length - 1] = `${lastChunk} ${sentence}${endOfSentenceSymbol}`;
 		return acc;
 	}, []);
 

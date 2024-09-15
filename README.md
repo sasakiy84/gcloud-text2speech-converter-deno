@@ -2,6 +2,7 @@
 
 google cloud の text-to-speech を使って、テキストを音声に変換するスクリプトです。
 主に英語の音声を生成するために作成しましたが、google cloud の [text-to-speech API が対応している言語](https://cloud.google.com/text-to-speech/docs/voices)であれば、変換可能です。
+ただし、End of Sentence の記号などの設定をいじる必要があります。
 
 ## セットアップ
 このスクリプトは [Deno](https://deno.land/) で動作します。
